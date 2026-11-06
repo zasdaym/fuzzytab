@@ -61,6 +61,8 @@ struct SwitcherView: View {
         }
         .frame(width: 680, height: 440)
         .background(.regularMaterial)
+        // The panel keeps a hidden title bar for its rounded corners; do not reserve space for it.
+        .ignoresSafeArea()
         .onAppear { searchFocused = true }
     }
 }
