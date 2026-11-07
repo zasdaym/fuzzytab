@@ -14,14 +14,16 @@ public final class Switcher {
     private var items: [Item] = []
     private var recent: [Target] = []
     private let providers: [Source: any Provider]
+    public let settings: AppSettings
 
-    public init(providers: [any Provider]) {
+    public init(providers: [any Provider], settings: AppSettings) {
         self.providers = Dictionary(uniqueKeysWithValues: providers.map { ($0.source, $0) })
+        self.settings = settings
     }
 
     public func refresh() async {
         let loaded = await withTaskGroup(of: (Source, Result<[Item], Error>).self) { group in
-            for (source, provider) in providers {
+            for (source, provider) in providers where settings.isEnabled(source) {
                 group.addTask { (source, await Result { try await provider.items() }) }
             }
             var all: [Source: Result<[Item], Error>] = [:]
@@ -67,8 +69,11 @@ public final class Switcher {
         }
     }
 
-    private func applyFilter() {
-        results = FuzzyMatcher.filter(items, query: query)
+    /// Applies the current settings to the loaded items without fetching again.
+    public func applyFilter() {
+        // Cap after matching, so a search still reaches entries past the limit.
+        let enabled = items.filter { settings.isEnabled($0.source) }
+        results = FuzzyMatcher.capped(FuzzyMatcher.filter(enabled, query: query), perSource: settings.limit)
         if !results.contains(where: { $0.id == selection }) {
             selection = results.first?.id
         }

@@ -75,3 +75,42 @@ private func item(_ title: String, _ subtitle: String = "", source: Source = .br
         #expect(items.map(\.title) == ["new", "old"])
     }
 }
+
+@Suite struct LimitTests {
+    @Test func capsEachSourceSeparately() {
+        let items = [item("b1"), item("r1", source: .rex), item("b2"), item("b3"), item("r2", source: .rex)]
+        #expect(FuzzyMatcher.capped(items, perSource: 2).map(\.title) == ["b1", "r1", "b2", "r2"])
+    }
+}
+
+@MainActor @Suite struct SettingsTests {
+    private func freshDefaults() -> UserDefaults {
+        let name = "fuzzytab-test-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    @Test func defaultsToAllAppsAndTenEntries() {
+        let settings = AppSettings(defaults: freshDefaults())
+        #expect(settings.limit == 10)
+        #expect(settings.enabled == Set(Source.allCases))
+    }
+
+    @Test func persistsChanges() {
+        let defaults = freshDefaults()
+        let settings = AppSettings(defaults: defaults)
+        settings.limit = 25
+        settings.setEnabled(.rex, false)
+
+        let reloaded = AppSettings(defaults: defaults)
+        #expect(reloaded.limit == 25)
+        #expect(reloaded.enabled == [.brave, .claude])
+    }
+
+    @Test func rejectsLimitBelowOne() {
+        let settings = AppSettings(defaults: freshDefaults())
+        settings.limit = 0
+        #expect(settings.limit == 1)
+    }
+}

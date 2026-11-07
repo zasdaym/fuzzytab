@@ -46,6 +46,15 @@ public enum FuzzyMatcher {
         return scored.map(\.item)
     }
 
+    /// Keeps at most `limit` items from each source, in their current order.
+    public static func capped(_ items: [Item], perSource limit: Int) -> [Item] {
+        var counts: [Source: Int] = [:]
+        return items.filter { item in
+            counts[item.source, default: 0] += 1
+            return counts[item.source]! <= limit
+        }
+    }
+
     private static func isSeparator(_ ch: Character) -> Bool {
         !(ch.isLetter || ch.isNumber)
     }

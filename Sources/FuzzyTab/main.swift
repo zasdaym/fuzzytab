@@ -9,8 +9,9 @@ final class SwitcherPanel: NSPanel {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
-    private let switcher = Switcher(providers: [BraveProvider(), RexProvider(), ClaudeProvider()])
+    private let switcher = Switcher(providers: [BraveProvider(), RexProvider(), ClaudeProvider()], settings: AppSettings())
     private var panel: SwitcherPanel!
+    private var settingsWindow: NSWindow?
     private var statusItem: NSStatusItem!
     private var hotKey: HotKey?
 
@@ -34,12 +35,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.image = NSImage(systemSymbolName: "rectangle.stack", accessibilityDescription: "FuzzyTab")
         let menu = NSMenu()
-        menu.addItem(withTitle: "Show FuzzyTab (⌥Space)", action: #selector(toggle), keyEquivalent: "")
+        menu.addItem(withTitle: "Show FuzzyTab (⌥Tab)", action: #selector(toggle), keyEquivalent: "")
+        menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem.menu = menu
 
-        hotKey = HotKey(keyCode: kVK_Space, modifiers: optionKey) { [weak self] in
+        hotKey = HotKey(keyCode: kVK_Tab, modifiers: optionKey) { [weak self] in
             MainActor.assumeIsolated { self?.toggle() }
         }
 
@@ -48,6 +50,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc func toggle() {
         panel.isVisible ? hide() : show()
+    }
+
+    @objc func showSettings() {
+        if settingsWindow == nil {
+            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(
+                settings: switcher.settings,
+                onChange: { [weak self] in self?.switcher.applyFilter() })))
+            window.title = "FuzzyTab Settings"
+            window.styleMask = [NSWindow.StyleMask.titled, .closable]
+            window.isReleasedWhenClosed = false
+            settingsWindow = window
+        }
+        settingsWindow?.center()
+        NSApp.activate()
+        settingsWindow?.makeKeyAndOrderFront(nil)
     }
 
     private func show() {
@@ -74,7 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 // `FuzzyTab --list` prints every item, to check the providers without the UI.
 if CommandLine.arguments.contains("--list") {
     Task { @MainActor in
-        let switcher = Switcher(providers: [BraveProvider(), RexProvider(), ClaudeProvider()])
+        let switcher = Switcher(providers: [BraveProvider(), RexProvider(), ClaudeProvider()], settings: AppSettings())
         await switcher.refresh()
         for item in switcher.results { print("[\(item.source.displayName)] \(item.title) — \(item.subtitle)") }
         for (source, message) in switcher.errors { print("error \(source.displayName): \(message)") }
