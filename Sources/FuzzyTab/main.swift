@@ -32,7 +32,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             onChoose: { [weak self] item in self?.choose(item) },
             onCancel: { [weak self] in self?.hide() }))
 
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        // A square item matches the width of other menu bar icons; variableLength adds padding around the symbol.
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "rectangle.stack", accessibilityDescription: "FuzzyTab")
         let menu = NSMenu()
         menu.addItem(withTitle: "Show FuzzyTab (⌥Tab)", action: #selector(toggle), keyEquivalent: "")
