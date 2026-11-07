@@ -46,6 +46,14 @@ public enum FuzzyMatcher {
         return scored.map(\.item)
     }
 
+    /// Groups items by app in `order`, keeping the current order inside each app.
+    public static func grouped(_ items: [Item], by order: [Source]) -> [Item] {
+        let rank = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        return items.enumerated()
+            .sorted { (rank[$0.element.source] ?? Int.max, $0.offset) < (rank[$1.element.source] ?? Int.max, $1.offset) }
+            .map(\.element)
+    }
+
     /// Keeps at most `limit` items from each source, in their current order.
     public static func capped(_ items: [Item], perSource limit: Int) -> [Item] {
         var counts: [Source: Int] = [:]

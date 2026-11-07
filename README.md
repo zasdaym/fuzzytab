@@ -11,8 +11,11 @@ Every space-separated word must match, and the app name is searchable too, so `r
 
 ## Settings
 
-Open Settings… from the menu bar icon to turn each app on or off and to set how many entries each app shows (default 10, shared by all apps).
-The limit applies after matching, so a search still finds entries past it.
+Open Settings… from the menu bar icon to:
+
+- Turn each app on or off.
+- Drag apps to change their order. Results are grouped by app in this order.
+- Set how many entries each app shows (default 10, shared by all apps). The limit applies after matching, so a search still finds entries past it.
 
 ## Build
 

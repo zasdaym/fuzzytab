@@ -72,8 +72,10 @@ public final class Switcher {
     /// Applies the current settings to the loaded items without fetching again.
     public func applyFilter() {
         // Cap after matching, so a search still reaches entries past the limit.
+        // Results follow the app order from settings; inside each app, best match (or most recent) first.
         let enabled = items.filter { settings.isEnabled($0.source) }
-        results = FuzzyMatcher.capped(FuzzyMatcher.filter(enabled, query: query), perSource: settings.limit)
+        let matched = FuzzyMatcher.filter(enabled, query: query)
+        results = FuzzyMatcher.capped(FuzzyMatcher.grouped(matched, by: settings.order), perSource: settings.limit)
         if !results.contains(where: { $0.id == selection }) {
             selection = results.first?.id
         }

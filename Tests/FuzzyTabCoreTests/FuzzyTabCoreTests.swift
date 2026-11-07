@@ -83,6 +83,13 @@ private func item(_ title: String, _ subtitle: String = "", source: Source = .br
     }
 }
 
+@Suite struct GroupingTests {
+    @Test func groupsByAppOrderAndKeepsRankInsideApp() {
+        let items = [item("b1"), item("c1", source: .claude), item("r1", source: .rex), item("b2"), item("c2", source: .claude)]
+        #expect(FuzzyMatcher.grouped(items, by: [.claude, .brave, .rex]).map(\.title) == ["c1", "c2", "b1", "b2", "r1"])
+    }
+}
+
 @MainActor @Suite struct SettingsTests {
     private func freshDefaults() -> UserDefaults {
         let name = "fuzzytab-test-\(UUID().uuidString)"
@@ -95,6 +102,22 @@ private func item(_ title: String, _ subtitle: String = "", source: Source = .br
         let settings = AppSettings(defaults: freshDefaults())
         #expect(settings.limit == 10)
         #expect(settings.enabled == Set(Source.allCases))
+        #expect(settings.order == Source.allCases)
+    }
+
+    @Test func persistsMovedOrder() {
+        let defaults = freshDefaults()
+        let settings = AppSettings(defaults: defaults)
+        settings.move(fromOffsets: [2], toOffset: 0)
+        #expect(settings.order == [.claude, .brave, .rex])
+        settings.move(fromOffsets: [0], toOffset: 3)
+        #expect(AppSettings(defaults: defaults).order == [.brave, .rex, .claude])
+    }
+
+    @Test func appendsAppsMissingFromStoredOrder() {
+        let defaults = freshDefaults()
+        defaults.set(["rex"], forKey: "sourceOrder")
+        #expect(AppSettings(defaults: defaults).order == [.rex, .brave, .claude])
     }
 
     @Test func persistsChanges() {
