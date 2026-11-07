@@ -33,7 +33,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             onCancel: { [weak self] in self?.hide() }))
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.image = NSImage(systemSymbolName: "rectangle.stack", accessibilityDescription: "FuzzyTab")
+        // At the default size this symbol draws only 13.5 pt wide, narrower than typical menu bar icons, which makes its gaps look uneven.
+        statusItem.button?.image = NSImage(systemSymbolName: "rectangle.stack", accessibilityDescription: "FuzzyTab")?
+            .withSymbolConfiguration(.init(pointSize: 15, weight: .regular))
         let menu = NSMenu()
         menu.addItem(withTitle: "Show FuzzyTab (⌥Tab)", action: #selector(toggle), keyEquivalent: "")
         menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
